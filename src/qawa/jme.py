@@ -41,6 +41,8 @@ def add_jme_variables(jets, events_rho):
     jets['mass_raw'] = (1 - jets.rawFactor) * jets.mass
     if hasattr(jets, 'matched_gen'):
         jets['pt_gen'  ] = ak.values_astype(ak.fill_none(jets.matched_gen.pt, 0), np.float32)
+    else:
+        jets['pt_gen'] = ak.Array(np.zeros(len(jets), dtype=np.float32))
     jets['rho'     ] = ak.broadcast_arrays(events_rho, jets.pt)[0]
     return jets
 

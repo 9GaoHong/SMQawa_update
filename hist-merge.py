@@ -5,22 +5,20 @@ import collections
 import functools
 import itertools
 import os, glob
+import subprocess
 from tqdm import tqdm
+import numpy as np
+def updated(c, items):
+    c.update(items)
+    return c
+tag = "vbs"
+eras = ["2016","2016APV","2018","2017"]
+# eras = ["2016"]
 
-def merger():
-    parser = argparse.ArgumentParser(description='Famous Submitter')
-    parser.add_argument("-t", '--tag', type=str, default="algiers", help="")
-    parser.add_argument('--era', type=str, default="2018"   , help="")
-    options = parser.parse_args()
-    
-
-    def updated(c, items):
-        c.update(items)
-        return c
-
-
+for era in eras:
     all_hists = []
-    for filename in tqdm(glob.glob(f'*{options.tag}*_{options.era}_*/*.pkl.gz'), desc="reading", ascii=False, ncols=75):
+    #for filename in tqdm(glob.glob(f'/eos/user/h/hgao/ZZTo2L2Nu/PKL/{era}_noDD_1129/*.pkl.gz'), desc="reading", ascii=False, ncols=75):
+    for filename in tqdm(glob.glob(f'/afs/cern.ch/user/h/hgao/SMQawa/{era}-SR-v2/*/*.pkl.gz'), desc="reading", ascii=False, ncols=75):
         if os.path.getsize(filename) == 0: 
             print(f"{filename} is empty !! ")
         else:
@@ -51,10 +49,8 @@ def merger():
         hist_ = dict(functools.reduce(updated, h, collections.Counter()))
         sumw_ = sum(combined_sumw[s])
         combined_dict[s] = {"hist": hist_, "sumw": sumw_}
-
-    with gzip.open(f"merged-histogram-{options.tag}-{options.era}.pkl.gz", "wb") as f:
+    with gzip.open(f"/eos/user/h/hgao/ZZTo2L2Nu/PKL/{era}_0206_SR_addDD_altCUT.pkl.gz", "wb") as f:
         pickle.dump(combined_dict, f)
         f.close()
-
-if __name__ == "__main__":
-    merger()
+        
+ 
