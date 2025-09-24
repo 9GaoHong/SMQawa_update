@@ -46,9 +46,10 @@ def build_leptons(muons, electrons):
         muons.softId   
     ]
     # select tight/loose electron
+	SCeta = np.abs(electrons.eta + electrons.deltaEtaSC)
     tight_electrons_mask = (
         (electrons.pt           > 20.) &
-        (np.abs(electrons.eta)  < 2.5) &
+        (((SCeta  < 2.5) & (SCeta  > 1.5660)) | (SCeta  < 1.4442)) &
         electrons.mvaFall17V2Iso_WP90
     )
     tight_electrons = electrons[tight_electrons_mask]
@@ -506,12 +507,13 @@ class zzinc_processor(processor.ProcessorABC):
                     self.btag_wp, 
                     self._era + 'APV' if self._isAPV else self._era
                 )) &
-                (np.abs(jets.eta)<2.5)
+                (np.abs(jets.eta)<(2.4 if "2016" in self._era else 2.5))
         )
         
         good_jets = jets[~jet_btag & jet_mask]
-        good_bjet = jets[jet_btag & jet_mask & (np.abs(jets.eta)<2.5)]
-        
+        good_bjet = jets[jet_btag & jet_mask]
+        good_jets_btagweight = jets[jet_mask & (np.abs(jets.eta) < (2.4 if "2016" in self._era else 2.5))]
+		
         pu_good_jets = jets[~jet_btag & jet_mask_PUID]
         ngood_jets  = ak.num(good_jets)
         ngood_bjets = ak.num(good_bjet)
@@ -723,7 +725,7 @@ class zzinc_processor(processor.ProcessorABC):
             weights.add('genweight', event.genWeight)
             era_name = self._era + 'APV' if self._isAPV else self._era
             dataDrivenDYRatio(dilep_pt,reco_met_pt,self._isDY, era_name, self._ddtype).ddr_add_weight(weights)
-            self._btag.append_btag_sf(jets, weights)
+            self._btag.append_btag_sf(good_jets_btagweight, weights)
             self._jpSF.append_jetPU_sf(pu_good_jets, weights)
             self._purw.append_pileup_weight(weights, event.Pileup.nPU)
             self._tauID.append_tauID_sf(had_taus, weights)
