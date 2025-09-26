@@ -718,8 +718,10 @@ class zzinc_processor(processor.ProcessorABC):
         
         # Apply GNN
         event['gnn_score'] = applyGNN(event).get_nnscore()
-        event['gnn_flat'] = self.gnn_flat_fnc(event['gnn_score'])
-
+        #event['gnn_flat'] = self.gnn_flat_fnc(event['gnn_score'])
+		raw_score = self.gnn_flat_fnc(event['gnn_score'])
+        clipped = np.where(raw_score >= 1., 0.999999, raw_score)
+        event['gnn_flat'] = np.where(clipped <= 0., 0.000001, clipped)
         # Now adding weights
         if not is_data:
             weights.add('genweight', event.genWeight)
