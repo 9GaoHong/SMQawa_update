@@ -34,9 +34,9 @@ class applyGNN:
         inputs = self.event[self.features]
 
         df_inputs=ak.to_pandas(inputs)
-        df_inputs.loc[df_inputs['third_jet_pt'] == -99, 'third_jet_pt'] = 30
-        df_inputs.loc[df_inputs['third_jet_phi'] == -99, 'third_jet_phi'] = 0
-        df_inputs.loc[df_inputs['third_jet_eta'] == -99, 'third_jet_eta'] = 0
+        df_inputs.loc[df_inputs['third_jet_pt'].isna(), 'third_jet_pt'] = 30
+        df_inputs.loc[df_inputs['third_jet_phi'].isna(), 'third_jet_phi'] = 0
+        df_inputs.loc[df_inputs['third_jet_eta'].isna(), 'third_jet_eta'] = 0
         df_inputs.loc[df_inputs['ngood_jets'] > 2, 'ngood_jets'] = 3
 
         warnings.filterwarnings("ignore", message="X has feature names, but MinMaxScaler was fitted without feature names")
@@ -47,5 +47,7 @@ class applyGNN:
     
     
     def get_nnscore(self):
-
-        return self.model.predict(self.conversion_GNN(), verbose=0)[:,0]
+        raw_score = self.model.predict(self.conversion_GNN(), verbose=0)[:, 0]
+        clipped = np.where(raw_score >= 1., 0.999999, raw_score)
+        clipped = np.where(clipped <= 0., 0.0001, clipped)
+        return clipped
