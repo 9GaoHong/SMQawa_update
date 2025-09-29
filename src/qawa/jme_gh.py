@@ -65,7 +65,6 @@ class JMEUncertainty:
             f'* * {_data_path}/{era}/{jec_tag}_L1FastJet_AK4PFchs.jec.txt',
             f'* * {_data_path}/{era}/{jec_tag}_L2L3Residual_AK4PFchs.jec.txt',
             f'* * {_data_path}/{era}/{jec_tag}_L2Relative_AK4PFchs.jec.txt',
-            f'* * {_data_path}/{era}/{jec_tag}_L3Absolute_AK4PFchs.jec.txt',
         ]
         
         correction_list_L1 = [
@@ -82,6 +81,9 @@ class JMEUncertainty:
             ]
             correction_list_L123 += common_files
             correction_list_JER += common_files
+        else:
+            Res = [f'* * {_data_path}/{era}/{jec_tag}_L2L3Residual_AK4PFchs.jec.txt']
+            correction_list_L123 += Res
         jec_name_map.update({'ptGenJet': 'pt_gen'})
 
         extract_L1.add_weight_sets(correction_list_L1)
