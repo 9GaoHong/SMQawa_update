@@ -729,7 +729,7 @@ class zzinc_processor(processor.ProcessorABC):
             dataDrivenDYRatio(dilep_pt,reco_met_pt,self._isDY, era_name, self._ddtype).ddr_add_weight(weights)
             self._btag.append_btag_sf(good_jets_btagweight, weights)
             self._jpSF.append_jetPU_sf(pu_good_jets, weights)
-            self._purw.append_pileup_weight(weights, event.Pileup.nPU)
+            self._purw.append_pileup_weight(weights, event.Pileup.nTrueInt)
             self._tauID.append_tauID_sf(had_taus, weights)
             self._add_trigger_sf(weights, lead_lep, subl_lep)
 
