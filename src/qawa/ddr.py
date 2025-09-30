@@ -21,7 +21,7 @@ class dataDrivenDYRatio:
 
 		self.ddmc_ratio = ddmc_ratio
 
-	def ddr_add_weight(self, weights:Weights):
+	def ddr_add_weight(self, weights:Weights, target_mask=None):
 		
 		ddmc_ratio = self.ddmc_ratio
 		met_pt=self.met_pt
@@ -61,9 +61,11 @@ class dataDrivenDYRatio:
 			dd_weights_up[met_pt_above200]  = dd_weights[met_pt_above200] * 1.300
 			dd_weights_down[met_pt_above200] = dd_weights[met_pt_above200] * 0.737
 
-		dd_weights[dd_weights==0] = 1
-		dd_weights_up[dd_weights_up==0]=1
-		dd_weights_down[dd_weights_down==0]=1
+		if target_mask is not None:
+			target_mask = np.asarray(target_mask, dtype=bool)
+			dd_weights = np.where(target_mask, dd_weights, 1.0)
+			dd_weights_up = np.where(target_mask, dd_weights_up, 1.0)
+			dd_weights_down = np.where(target_mask, dd_weights_down, 1.0)
 
 
 		weights.add(f'dataDrivenDYRatio_{self._era}', dd_weights,dd_weights_up,dd_weights_down)
