@@ -178,7 +178,13 @@ class zzinc_processor(processor.ProcessorABC):
         
         with open(f'{_data_path}/GNNmodel/gnn_flattening_fnc_{era}.pkl', 'rb') as _fn:
             self.gnn_flat_fnc = pickle.load(_fn)
-
+		_gnn_flat_x = np.asarray(self.gnn_flat_fnc.x, dtype=float)
+        _gnn_flat_y = np.asarray(self.gnn_flat_fnc.y, dtype=float)
+        self._gnn_score_min = float(np.nanmin(_gnn_flat_x)) if _gnn_flat_x.size else 0.0
+        self._gnn_score_max = float(np.nanmax(_gnn_flat_x)) if _gnn_flat_x.size else 1.0
+        self._gnn_flat_min = float(max(0.0, np.nanmin(_gnn_flat_y))) if _gnn_flat_y.size else 0.0
+        self._gnn_flat_max = float(min(1.0, np.nanmax(_gnn_flat_y))) if _gnn_flat_y.size else 1.0
+		
         self.ewk_process_name = ewk_process_name
         if self.ewk_process_name is not None:
             self.ewk_corr = ewk_corrector(process=ewk_process_name)
@@ -718,10 +724,22 @@ class zzinc_processor(processor.ProcessorABC):
         
         # Apply GNN
         event['gnn_score'] = applyGNN(event).get_nnscore()
-        #event['gnn_flat'] = self.gnn_flat_fnc(event['gnn_score'])
-		raw_score = self.gnn_flat_fnc(event['gnn_score'])
-        clipped = np.where(raw_score >= 1., 0.999999, raw_score)
-        event['gnn_flat'] = np.where(clipped <= 0., 0.000001, clipped)
+        score_for_flat = np.minimum(
+            np.maximum(event['gnn_score'], self._gnn_score_min),
+            self._gnn_score_max,
+        )
+        raw_score = self.gnn_flat_fnc(score_for_flat)
+        raw_score = np.nan_to_num(
+            raw_score,
+            nan=self._gnn_flat_min,
+            posinf=self._gnn_flat_max,
+            neginf=self._gnn_flat_min,
+        )
+        event['gnn_flat'] = np.minimum(
+            np.maximum(raw_score, self._gnn_flat_min),
+            self._gnn_flat_max,
+        )
+
         # Now adding weights
         if not is_data:
             weights.add('genweight', event.genWeight)
@@ -906,7 +924,20 @@ class zzinc_processor(processor.ProcessorABC):
         # ],
         }
 
-            
+        if not is_data:
+            vbs_sr_sel = channels["vbs-SR"]
+            vbs_sr_args = {
+                s.replace('~', ''): (False if '~' in s else True) for s in vbs_sr_sel
+            }
+            vbs_sr_mask = selection.require(**vbs_sr_args)
+            dataDrivenDYRatio(
+                dilep_pt,
+                reco_met_pt,
+                self._isDY,
+                self._era,
+                self._ddtype,
+            ).ddr_add_weight(weights, target_mask=vbs_sr_mask)
+			
         def _format_variable(variable, cut):
             if cut is None:
                 vv = ak.to_numpy(ak.fill_none(variable, np.nan))
